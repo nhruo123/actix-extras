@@ -113,15 +113,15 @@ where
     }
 }
 
-impl<S, B, T, F, O> Transform<S, ServiceRequest> for HttpAuthentication<T, F>
+impl<S, T, F, O> Transform<S, ServiceRequest> for HttpAuthentication<T, F>
 where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
+    S: Service<ServiceRequest, Response = ServiceResponse, Error = Error> + 'static,
     S::Future: 'static,
     F: Fn(ServiceRequest, T) -> O + 'static,
     O: Future<Output = Result<ServiceRequest, Error>> + 'static,
     T: AuthExtractor + 'static,
 {
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse;
     type Error = Error;
     type Transform = AuthenticationMiddleware<S, F, T>;
     type InitError = ();
@@ -146,17 +146,17 @@ where
     _extractor: PhantomData<T>,
 }
 
-impl<S, B, F, T, O> Service<ServiceRequest> for AuthenticationMiddleware<S, F, T>
+impl<S, F, T, O> Service<ServiceRequest> for AuthenticationMiddleware<S, F, T>
 where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
+    S: Service<ServiceRequest, Response = ServiceResponse, Error = Error> + 'static,
     S::Future: 'static,
     F: Fn(ServiceRequest, T) -> O + 'static,
     O: Future<Output = Result<ServiceRequest, Error>> + 'static,
     T: AuthExtractor + 'static,
 {
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse;
     type Error = S::Error;
-    type Future = LocalBoxFuture<'static, Result<ServiceResponse<B>, Error>>;
+    type Future = LocalBoxFuture<'static, Result<ServiceResponse, Error>>;
 
     actix_service::forward_ready!(service);
 
