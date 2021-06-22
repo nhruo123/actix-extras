@@ -26,7 +26,7 @@ pub struct CorsMiddleware<S> {
 }
 
 impl<S> CorsMiddleware<S> {
-    fn handle_preflight<B>(inner: &Inner, req: ServiceRequest) -> ServiceResponse<B> {
+    fn handle_preflight(inner: &Inner, req: ServiceRequest) -> ServiceResponse {
         if let Err(err) = inner
             .validate_origin(req.head())
             .and_then(|_| inner.validate_allowed_method(req.head()))
@@ -68,15 +68,13 @@ impl<S> CorsMiddleware<S> {
             res.insert_header((header::ACCESS_CONTROL_MAX_AGE, max_age.to_string()));
         }
 
-        let res = res.finish();
-        let res = res.into_body();
-        req.into_response(res)
+        req.into_response(res.finish())
     }
 
-    fn augment_response<B>(
+    fn augment_response(
         inner: &Inner,
-        mut res: ServiceResponse<B>,
-    ) -> ServiceResponse<B> {
+        mut res: ServiceResponse,
+    ) -> ServiceResponse {
         if let Some(origin) = inner.access_control_allow_origin(res.request().head()) {
             res.headers_mut()
                 .insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, origin);
@@ -112,20 +110,19 @@ impl<S> CorsMiddleware<S> {
     }
 }
 
-type CorsMiddlewareServiceFuture<B> = Either<
-    Ready<Result<ServiceResponse<B>, Error>>,
-    LocalBoxFuture<'static, Result<ServiceResponse<B>, Error>>,
+type CorsMiddlewareServiceFuture = Either<
+    Ready<Result<ServiceResponse, Error>>,
+    LocalBoxFuture<'static, Result<ServiceResponse, Error>>,
 >;
 
-impl<S, B> Service<ServiceRequest> for CorsMiddleware<S>
+impl<S> Service<ServiceRequest> for CorsMiddleware<S>
 where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    S: Service<ServiceRequest, Response = ServiceResponse, Error = Error>,
     S::Future: 'static,
-    B: 'static,
 {
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse;
     type Error = Error;
-    type Future = CorsMiddlewareServiceFuture<B>;
+    type Future = CorsMiddlewareServiceFuture;
 
     actix_service::forward_ready!(service);
 

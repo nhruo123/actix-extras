@@ -483,13 +483,12 @@ impl Default for Cors {
     }
 }
 
-impl<S, B> Transform<S, ServiceRequest> for Cors
+impl<S> Transform<S, ServiceRequest> for Cors
 where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    S: Service<ServiceRequest, Response = ServiceResponse, Error = Error>,
     S::Future: 'static,
-    B: 'static,
 {
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse;
     type Error = Error;
     type InitError = ();
     type Transform = CorsMiddleware<S>;
